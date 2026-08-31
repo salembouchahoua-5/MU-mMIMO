@@ -35,8 +35,7 @@ The paper proposes two precoders for massive-MIMO base stations with low-resolut
 | File | Contents |
 |---|---|
 | `system_model.py` | Quantizer and DAC alphabet (eqs. 2–4), QAM/PSK constellations, i.i.d. and spatially-correlated channel generation, CSI error model, core MSE objective and optimal receiver scaling (eqs. 6, 7, 9) |
-| `baselines.py` | Wiener filter / MMSE, MRT, and ZF linear precoders (eqs. 11–16) |
-| `cdm.py` | Coordinate Descent precoding (Algorithm 1) |
+| `baselines.py` | Wiener filter / MMSE, MRT, ZF linear precoders (eqs. 11–16) and CDM : Coordinate Descent precoding (Algorithm 1) |
 | `mqp.py` | **Multibit Quantized Precoding** (Algorithm 2) — fractional-programming closed-form solver, Woodbury-accelerated, with Morozov's discrepancy principle for automatic regularization tuning |
 | `gabp.py` | **GaBP-Quantized Precoding** (Algorithm 3) — Gaussian belief propagation on the precoding factor graph, linear per-iteration complexity |
 | `exhaustive.py` | Brute-force optimal solver, for validation on small systems only |

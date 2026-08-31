@@ -22,7 +22,7 @@ def gen_alphabet(b, P, NT) :
 
     L = 2**b
     l = np.arange(L)
-    delta = np.sqrt( (6*P) / NT * (L**2 - 1) ) if L > 1 else delta = 1
+    delta = np.sqrt(6.0 * P / (NT * (L ** 2 - 1))) if L > 1 else 1.0
     levels = delta * ( l - (L - 1) / 2.0)
     thresholds = delta * (np.arange(1,L) - L / 2.0)
     re , im = np.meshgrid(levels , levels)
@@ -32,23 +32,20 @@ def gen_alphabet(b, P, NT) :
 
 def quantize_real(x , levels , thresholds) :
     """Map a real array to the nearest level via eq (4)."""
-    return levels[np.searchsorted(x, thresholds , side = "right")]
+    return levels[np.searchsorted(thresholds , x ,  side = "right")]
 
-def Qb(x, levels , thresholds ) :
-    """Element-wise complex quantization: quantize real and imaginary
-        parts separately, eq (4).
-    """
-    return (quantize_real(x.reals , levels , thresholds ) )+ 1j * (quantize_real(x.imag, levels , thresholds))
-
-def qam_constellation(M) :
+def Qb(x, levels, thresholds):
+    """Element-wise complex quantization, eq (4)."""
+    return (quantize_real(x.real, levels, thresholds)
+         + 1j * quantize_real(x.imag, levels, thresholds))
+def qam_constellation(M):
     """Standard square M-QAM constellation, unit average energy."""
     m = int(round(np.sqrt(M)))
-    assert m*m == M
-    levels = np.arange(m) - ( m - 1 ) / 2.0
-    re , im = np.meshgrid(m,m)
+    assert m * m == M, "M must be a perfect square (QPSK=4, 16-QAM=16, ...)"
+    pts = np.arange(m) - (m - 1) / 2.0
+    re, im = np.meshgrid(pts, pts)
     C = (re + 1j * im).flatten()
-    return C / np.sqrt(np.mean(np.abs(C)**2))
-
+    return C / np.sqrt(np.mean(np.abs(C) ** 2))
 
 def gray_bitmap(M):
     """A consistent (not necessarily literature-standard Gray) bit mapping
@@ -67,16 +64,16 @@ def gray_bitmap(M):
 
 def iid_Rayleigh_channel(NU , NT , rng ) :
     """H with i.i.d. CN(0,1) entries."""
-    return (rng.standard_normal(NU , NT) + 1j * rng.standard_normal(NU , NT) )/np.sqrt(2)
+    return (rng.standard_normal((NU , NT)) + 1j * rng.standard_normal((NU , NT)) )/np.sqrt(2)
 
-def apply_csi_error(H , tau) :
+def apply_csi_error(H , tau, rng ) :
     """Gauss-Markov CSI error model, eq (49): Hhat = sqrt(1-tau^2) H + tau E,
     with E ~ i.i.d. CN(0,1) entries, tau in [0,1].
     In a system simulation, use the output `Hhat` to calculate your precoding
     or combining weights, but apply those weights to the input `H` to calculate
     the actual physical received signal and SNR."""
     NU , NT = H.shape
-    E = iid_Rayleigh_channel(NU, NT)
+    E = iid_Rayleigh_channel(NU, NT , rng)
 
     return np.sqrt(1 - tau**2) * H + tau * E
 
@@ -89,7 +86,7 @@ def jakes_correlation_matrix(N , d_over_lambda) :
 
     return j0(2 * np.pi * d_over_lambda * diff)
 
-def Kronecker_correlated_channel(NU , NT , d_over_lambda , rng) :
+def kronecker_correlated_channel(NU , NT , d_over_lambda , rng) :
 
     Rtx = jakes_correlation_matrix(NT , d_over_lambda)
     Rtx_half = np.linalg.cholesky(Rtx + 1e-10*np.eye(NT))
@@ -109,7 +106,7 @@ def beta_star(s, H , x , NU , sigma_n2) :
 
     return num / den
 
-def objective(s , beta , H , x , NU , sigma_n2 ) :
-    """The receive-side MSE objective, eq (6)/(7)."""
 
-    return np.linalg.norm(s - np.vdot(beta , H @ x)) ** 2 + beta**2 * NU * sigma_n2
+def objective(s, H, x, beta, NU, sigma_n2):
+    """The receive-side MSE objective, eq (6)/(7)."""
+    return np.linalg.norm(s - beta * (H @ x)) ** 2 + beta ** 2 * NU * sigma_n2
